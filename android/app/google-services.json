@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "804161731157",
+    "project_id": "travel-ai-guide-90ce8",
+    "storage_bucket": "travel-ai-guide-90ce8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804161731157:android:dae12467f57ac5b9a4f2dc",
+        "android_client_info": {
+          "package_name": "com.example.my_travel_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGr4CX0Y60w0c58xsSPvqaWCgT_p33JmE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

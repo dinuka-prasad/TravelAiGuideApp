@@ -1,0 +1,44 @@
+import 'hotel_model.dart';
+
+final List<Hotel> kHotels = [
+  Hotel(
+    id: 'h1',
+    name: 'Heritance Kandalama',
+    location: 'Dambulla, Sri Lanka',
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
+    rating: 4.9,
+    price: 250.0,
+    description: 'An architectural masterpiece by Geoffrey Bawa, Heritance Kandalama is built into a rock face and offers stunning views of the Sigiriya rock and Kandalama tank.',
+    amenities: ['Infinity Pool', 'Eco Park', 'Spa', 'Fine Dining', 'Gym'],
+  ),
+  Hotel(
+    id: 'h2',
+    name: '98 Acres Resort & Spa',
+    location: 'Ella, Sri Lanka',
+    image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80',
+    rating: 4.8,
+    price: 180.0,
+    description: 'A scenic tea estate resort offering luxury chalets with breathtaking views of the Ella Gap and Little Adam\'s Peak.',
+    amenities: ['Tea Plantation', 'Spa', 'Pool', 'Restaurant', 'Hiking'],
+  ),
+  Hotel(
+    id: 'h3',
+    name: 'Cinnamon Bentota Beach',
+    location: 'Bentota, Sri Lanka',
+    image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80',
+    rating: 4.7,
+    price: 210.0,
+    description: 'A heritage resort designed by Geoffrey Bawa, offering a blend of colonial charm and modern luxury on the banks of the Bentota River.',
+    amenities: ['Beach Access', 'Water Sports', 'Kids Club', 'Multiple Pools', 'Art Gallery'],
+  ),
+  Hotel(
+    id: 'h4',
+    name: 'Jetwing Lighthouse',
+    location: 'Galle, Sri Lanka',
+    image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80',
+    rating: 4.8,
+    price: 195.0,
+    description: 'Perched on a rocky promontory overlooking the Indian Ocean, this iconic hotel offers a majestic stay near the historic Galle Fort.',
+    amenities: ['Ocean View', 'Galle Fort proximity', 'Pool', 'Tennis Court', 'Ayurvedic Spa'],
+  ),
+];
