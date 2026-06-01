@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
 import 'destinations.dart';
 import 'app_theme.dart';
 
@@ -110,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen>
                           const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Smart Travel',
+                              Text('ARAKSHAKAYA',
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 20,
@@ -166,11 +168,17 @@ class _SplashScreenState extends State<SplashScreen>
                       const SizedBox(height: 40),
                       // Get Started button
                       ElevatedButton(
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const LoginScreen()),
-                        ),
+                        onPressed: () {
+                          final user = FirebaseAuth.instance.currentUser;
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => user != null
+                                  ? const HomeScreen()
+                                  : const LoginScreen(),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.textPrimary,

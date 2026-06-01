@@ -1,30 +1,33 @@
 // ─────────────────────────────────────────────
-// App Colour & Theme Tokens — Deep Indigo + Amber
+// App Colour & Theme Tokens — Sri Lankan Tropical
 // ─────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary palette — Sleek Indigo
-  static const Color primary = Color(0xFF5E35B1); // Deep Purple 600
-  static const Color primaryLight = Color(0xFF9575CD); // Deep Purple 300
-  static const Color primaryDark = Color(0xFF311B92); // Deep Purple 900
-  static const Color primarySurface = Color(0xFFF3E5F5); // Deep Purple 50
+  // Primary palette — Tropical Green
+  static const Color primary = Color(0xFF2E7D32); // Green 800
+  static const Color primaryLight = Color(0xFF66BB6A); // Green 400
+  static const Color primaryDark = Color(0xFF1B5E20); // Green 900
+  static const Color primarySurface = Color(0xFFE8F5E9); // Green 50
 
-  // Accent — Vibrant Gold
-  static const Color accent = Color(0xFFFFB300); // Amber 600
-  static const Color accentLight = Color(0xFFFFD54F); // Amber 300
-  static const Color accentDark = Color(0xFFFFA000); // Amber 700
+  // Accent — Sunset Orange / Warm Gold
+  static const Color accent = Color(0xFFFF8F00); // Amber 800
+  static const Color accentLight = Color(0xFFFFB300); // Amber 600
+  static const Color accentDark = Color(0xFFFF6F00); // Amber 900
+
+  // Secondary - Ocean Blue
+  static const Color oceanBlue = Color(0xFF0288D1); // Light Blue 700
 
   // Neutral
-  static const Color background = Color(0xFFFAFAFE); // Very light indigo tint
+  static const Color background = Color(0xFFFBFDF9); // Very light greenish-white tint
   static const Color surface = Colors.white;
   static const Color cardBg = Color(0xFFFFFFFF);
 
   // Text
-  static const Color textPrimary = Color(0xFF1A1A2E); // Near black
-  static const Color textSecondary = Color(0xFF535370); // Muted purple-grey
-  static const Color textHint = Color(0xFFA0A0C0);
+  static const Color textPrimary = Color(0xFF1B1B1B); // Near black
+  static const Color textSecondary = Color(0xFF4B554B); // Muted green-grey
+  static const Color textHint = Color(0xFFA0AAB0);
 
   // Status
   static const Color success = Color(0xFF00C853);
@@ -35,19 +38,19 @@ class AppColors {
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF7E57C2), Color(0xFF5E35B1)],
+    colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
   );
 
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xAA5E35B1), Color(0xFF311B92)],
+    colors: [Color(0xCC2E7D32), Color(0xFF1B5E20)],
   );
 
   static const LinearGradient accentGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFFCA28), Color(0xFFFFB300)],
+    colors: [Color(0xFFFFB300), Color(0xFFFF8F00)],
   );
 }
 

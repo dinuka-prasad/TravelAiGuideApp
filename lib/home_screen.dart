@@ -5,8 +5,10 @@ import 'detail_screen.dart';
 import 'planner_screen.dart';
 import 'chat_screen.dart';
 import 'dashboard_screen.dart';
+import 'profile_screen.dart';
 import 'login_screen.dart';
 import 'app_theme.dart';
+import 'favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,6 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _goToProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -63,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final List<Widget> pages = [
       _buildHomeTab(),
       const DashboardScreen(),
+      const FavoritesScreen(),
       const PlannerScreen(),
       const AiChatScreen(),
     ];
@@ -102,6 +112,11 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'Dashboard',
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.favorite_border),
+              activeIcon: Icon(Icons.favorite),
+              label: 'Favorites',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.bookmark_border),
               activeIcon: Icon(Icons.bookmark),
               label: 'Planner',
@@ -129,6 +144,11 @@ class _HomeScreenState extends State<HomeScreen> {
           automaticallyImplyLeading: false,
           backgroundColor: AppColors.primary,
           actions: [
+            IconButton(
+              icon: const Icon(Icons.person, color: Colors.white),
+              onPressed: _goToProfile,
+              tooltip: 'Profile',
+            ),
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.white),
               onPressed: _logout,

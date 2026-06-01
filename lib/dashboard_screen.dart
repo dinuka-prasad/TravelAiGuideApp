@@ -322,7 +322,7 @@ class DashboardScreen extends StatelessWidget {
           ? FirebaseFirestore.instance
               .collection('users')
               .doc(uid)
-              .collection('wishlist')
+              .collection('favorites')
               .snapshots()
           : null,
       builder: (ctx, wishlistSnap) {
@@ -379,7 +379,7 @@ class DashboardScreen extends StatelessWidget {
       stream: FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
-          .collection('wishlist')
+          .collection('favorites')
           .limit(3)
           .snapshots(),
       builder: (ctx, snap) {
