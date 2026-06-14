@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'destinations.dart';
+import 'package:provider/provider.dart';
+import 'data_provider.dart';
 import 'detail_screen.dart';
 import 'planner_screen.dart';
 import 'chat_screen.dart';
@@ -9,6 +10,7 @@ import 'profile_screen.dart';
 import 'login_screen.dart';
 import 'app_theme.dart';
 import 'favorites_screen.dart';
+import 'universal_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,8 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
     'Mountain',
   ];
 
-  List<Map<String, dynamic>> get _filtered {
-    return kDestinations.where((d) {
+  List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> dataDestinations) {
+    return dataDestinations.where((d) {
       final matchCat =
           _selectedCategory == 'All' || d['category'] == _selectedCategory;
       final matchSearch = _searchQuery.isEmpty ||
@@ -71,10 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       _buildHomeTab(),
-      const DashboardScreen(),
-      const FavoritesScreen(),
-      const PlannerScreen(),
-      const AiChatScreen(),
+      DashboardScreen(),
+      FavoritesScreen(),
+      PlannerScreen(),
+      AiChatScreen(),
     ];
 
     return Scaffold(
@@ -87,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
             BoxShadow(
                 color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
-                offset: const Offset(0, -4))
+                offset: Offset(0, -4))
           ],
         ),
         child: BottomNavigationBar(
@@ -135,11 +137,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHomeTab() {
     final user = FirebaseAuth.instance.currentUser;
     final displayName = user?.email?.split('@').first ?? 'Traveller';
+    final dataProvider = Provider.of<DataProvider>(context);
+
+    if (dataProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final destinationsList = dataProvider.destinations;
+    final filteredList = _filtered(destinationsList);
 
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: 190,
+          expandedHeight: 220,
           pinned: true,
           automaticallyImplyLeading: false,
           backgroundColor: AppColors.primary,
@@ -156,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+            titlePadding: const EdgeInsets.only(left: 16, bottom: 44),
             title: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,103 +180,111 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 15)),
+                        fontSize: 16)),
               ],
             ),
-            background: Container(
-              decoration:
-                  const BoxDecoration(gradient: AppColors.heroGradient),
-              child: Stack(
-                children: [
-                  // Decorative circle
-                  Positioned(
-                    top: -30,
-                    right: -30,
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                UniversalImage(
+                  imagePath: 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=800&q=80',
+                  fit: BoxFit.cover,
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.75),
+                      ],
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 55, right: 16),
                     child: Container(
-                      width: 160,
-                      height: 160,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.06),
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.auto_awesome,
+                              color: AppColors.accentLight, size: 13),
+                          const SizedBox(width: 4),
+                          Text(
+                              '${destinationsList.length} Places',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600)),
+                        ],
                       ),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.only(top: 50, right: 16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color:
-                                  Colors.white.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.auto_awesome,
-                                color: AppColors.accentLight, size: 13),
-                            const SizedBox(width: 4),
-                            Text(
-                                '${kDestinations.length} Destinations',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ),
-
-        // Search bar
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (v) => setState(() => _searchQuery = v),
-              decoration: InputDecoration(
-                hintText: 'Search destinations…',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                prefixIcon:
-                    const Icon(Icons.search, color: AppColors.primary),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon:
-                            const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide:
-                      BorderSide(color: Colors.grey[200]!, width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                      color: AppColors.primary, width: 1.5),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(40),
+            child: Transform.translate(
+              offset: const Offset(0, 20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search destinations…',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      prefixIcon: Icon(Icons.search, color: AppColors.primary),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                            color: AppColors.primary, width: 1.5),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -276,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Category chips
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 0, 4),
+            padding: const EdgeInsets.fromLTRB(16, 30, 0, 4),
             child: SizedBox(
               height: 38,
               child: ListView.separated(
@@ -290,8 +308,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: () =>
                         setState(() => _selectedCategory = cat),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
+                      duration: Duration(milliseconds: 200),
+                      padding: EdgeInsets.symmetric(
                           horizontal: 18, vertical: 8),
                       decoration: BoxDecoration(
                         color: selected
@@ -344,13 +362,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   _selectedCategory == 'All'
                       ? 'Top Destinations'
                       : '$_selectedCategory Destinations',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary),
                 ),
                 Text(
-                  '${_filtered.length} found',
+                  '${filteredList.length} found',
                   style: TextStyle(
                       color: Colors.grey[500], fontSize: 12),
                 ),
@@ -360,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         // Destination cards
-        if (_filtered.isEmpty)
+        if (filteredList.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -380,8 +398,8 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, i) => _DestinationCard(location: _filtered[i]),
-                childCount: _filtered.length,
+                (context, i) => _DestinationCard(location: filteredList[i]),
+                childCount: filteredList.length,
               ),
             ),
           ),
@@ -427,26 +445,18 @@ class _DestinationCard extends StatelessWidget {
                   ClipRRect(
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(24)),
-                    child: Image.network(
-                      location['img'],
+                    child: UniversalImage(
+                      imagePath: location['img'],
                       height: 200,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      loadingBuilder: (ctx, child, prog) {
-                        if (prog == null) return child;
-                        return Container(
-                            height: 200,
-                            color: Colors.grey[200],
-                            child: const Center(
-                                child: CircularProgressIndicator(
-                                    color: AppColors.primary)));
-                      },
-                      errorBuilder: (_, _, _) => Container(
+                      errorWidget: Container(
                         height: 200,
                         color: AppColors.primarySurface,
-                        child: const Center(
-                            child: Icon(Icons.image_not_supported,
-                                color: AppColors.primary, size: 48)),
+                        child: Center(
+                          child: Icon(Icons.image_not_supported,
+                              color: AppColors.primary, size: 48),
+                        ),
                       ),
                     ),
                   ),
@@ -502,18 +512,18 @@ class _DestinationCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(location['name'],
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary)),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.location_on,
+                              Icon(Icons.location_on,
                                   color: AppColors.primary, size: 13),
-                              const SizedBox(width: 3),
+                              SizedBox(width: 3),
                               Text(location['country'],
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13)),
@@ -531,7 +541,7 @@ class _DestinationCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 12, vertical: 7),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.1),
@@ -539,11 +549,11 @@ class _DestinationCard extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.calendar_today,
+                              Icon(Icons.calendar_today,
                                   color: AppColors.primary, size: 12),
-                              const SizedBox(width: 5),
+                              SizedBox(width: 5),
                               Text(location['bestTime'],
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: AppColors.primary,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600)),

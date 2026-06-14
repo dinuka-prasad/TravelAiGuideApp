@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'ai_service.dart';
 import 'app_theme.dart';
 
@@ -29,14 +31,98 @@ class _AiChatScreenState extends State<AiChatScreen> {
       'You have deep knowledge of Sri Lankan culture, history, destinations, food, transport, weather, costs, safety tips, and travel logistics. '
       'Be warm, enthusiastic, practical, and specific. Keep responses concise but helpful. Use emojis naturally.';
 
+  bool _isHistoryLoading = true;
+
   @override
   void initState() {
     super.initState();
-    _messages.add(_ChatMessage(
-      text:
-          "Hello! I'm your AI travel assistant for Sri Lanka 🇱🇰\n\nAsk me anything — best time to visit, hidden gems, food recommendations, budget tips, or help planning your itinerary!",
-      isUser: false,
-    ));
+    _loadChatHistory();
+  }
+
+  Future<void> _loadChatHistory() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      setState(() => _isHistoryLoading = false);
+      return;
+    }
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('chat_history')
+          .orderBy('timestamp', descending: false)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        final loaded = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return _ChatMessage(
+            text: data['text'] ?? '',
+            isUser: data['isUser'] ?? false,
+            isError: data['isError'] ?? false,
+          );
+        }).toList();
+
+        setState(() {
+          _messages.clear();
+          _messages.addAll(loaded);
+          _isHistoryLoading = false;
+        });
+      } else {
+        setState(() {
+          _messages.clear();
+          _messages.add(const _ChatMessage(
+            text:
+                "Hello! I'm your AI travel assistant for Sri Lanka 🇱🇰\n\nAsk me anything — best time to visit, hidden gems, food recommendations, budget tips, or help planning your itinerary!",
+            isUser: false,
+          ));
+          _isHistoryLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading chat history: $e');
+      setState(() => _isHistoryLoading = false);
+    }
+  }
+
+  Future<void> _saveMessageToFirestore(String text, bool isUser, {bool isError = false}) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('chat_history')
+          .add({
+        'text': text,
+        'isUser': isUser,
+        'isError': isError,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error saving message to Firestore: $e');
+    }
+  }
+
+  Future<void> _clearChatHistory() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('chat_history')
+          .get();
+
+      final batch = FirebaseFirestore.instance.batch();
+      for (var doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Error clearing chat history: $e');
+    }
   }
 
   @override
@@ -58,6 +144,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
     });
     _scrollToBottom();
 
+    await _saveMessageToFirestore(userMsg, true);
+
     try {
       final response = await callAiApi(
         systemPrompt: _systemPrompt,
@@ -72,12 +160,14 @@ class _AiChatScreenState extends State<AiChatScreen> {
         });
         _scrollToBottom();
       }
+
+      await _saveMessageToFirestore(response, false);
     } catch (e) {
+      final errorMsg = '⚠️ Sorry, I couldn\'t reach the AI. Please check your API key in `ai_service.dart` and try again.\n\nError: $e';
       if (mounted) {
         setState(() {
           _messages.add(_ChatMessage(
-            text:
-                '⚠️ Sorry, I couldn\'t reach the AI. Please check your API key in `ai_service.dart` and try again.\n\nError: $e',
+            text: errorMsg,
             isUser: false,
             isError: true,
           ));
@@ -85,6 +175,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
         });
         _scrollToBottom();
       }
+      await _saveMessageToFirestore(errorMsg, false, isError: true);
     }
   }
 
@@ -93,7 +184,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent + 100,
-          duration: const Duration(milliseconds: 350),
+          duration: Duration(milliseconds: 350),
           curve: Curves.easeOut,
         );
       }
@@ -110,12 +201,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.auto_awesome,
+              child: Icon(Icons.auto_awesome,
                   color: AppColors.accentLight, size: 20),
             ),
             const SizedBox(width: 10),
@@ -136,22 +227,25 @@ class _AiChatScreenState extends State<AiChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () {
+            onPressed: () async {
               setState(() {
                 _messages.clear();
-                _messages.add(_ChatMessage(
+                _messages.add(const _ChatMessage(
                   text:
                       "Hello! I'm your AI travel assistant for Sri Lanka 🇱🇰\n\nAsk me anything — best time to visit, hidden gems, food recommendations, budget tips, or help planning your itinerary!",
                   isUser: false,
                 ));
               });
+              await _clearChatHistory();
             },
             tooltip: 'Clear chat',
           ),
         ],
       ),
-      body: Column(
-        children: [
+      body: _isHistoryLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
           // Messages list
           Expanded(
             child: ListView.builder(
@@ -194,7 +288,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       itemBuilder: (context, i) => GestureDetector(
                         onTap: () => _sendMessage(_quickChips[i]),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.08),
@@ -204,7 +298,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                                     .withValues(alpha: 0.3)),
                           ),
                           child: Text(_quickChips[i],
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color: AppColors.primary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500)),
@@ -256,8 +350,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 GestureDetector(
                   onTap: () => _sendMessage(_inputController.text),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.all(12),
+                    duration: Duration(milliseconds: 200),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: _isLoading
                           ? Colors.grey[300]
@@ -298,7 +392,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
         children: [
           if (!msg.isUser) ...[
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: msg.isError
                     ? Colors.red[50]
@@ -311,11 +405,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 size: 18,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                   horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: msg.isUser
@@ -333,7 +427,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   BoxShadow(
                       color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 8,
-                      offset: const Offset(0, 2))
+                      offset: Offset(0, 2))
                 ],
               ),
               child: Text(
@@ -350,7 +444,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               ),
             ),
           ),
-          if (msg.isUser) const SizedBox(width: 8),
+          if (msg.isUser) SizedBox(width: 8),
         ],
       ),
     );
@@ -358,16 +452,16 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   Widget _buildTypingIndicator() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.auto_awesome,
+            child: Icon(Icons.auto_awesome,
                 color: AppColors.primary, size: 18),
           ),
           const SizedBox(width: 8),
@@ -444,7 +538,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
     return AnimatedBuilder(
       animation: _anim,
       builder: (_, _) => Container(
-        margin: const EdgeInsets.symmetric(horizontal: 3),
+        margin: EdgeInsets.symmetric(horizontal: 3),
         width: 8,
         height: 8 + (_anim.value * 4),
         decoration: BoxDecoration(

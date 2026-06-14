@@ -64,7 +64,7 @@ Use bullet points (- ) within sections. Be specific to ${widget.location['name']
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('AI Tips: ${widget.location['name']}',
-            style: const TextStyle(
+            style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 16)),
@@ -93,13 +93,13 @@ Use bullet points (- ) within sections. Be specific to ${widget.location['name']
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CircularProgressIndicator(
+                    CircularProgressIndicator(
                         color: AppColors.primary, strokeWidth: 3),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Text(
                       'AI is crafting tips for\n${widget.location['name']}…',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                           fontSize: 15),
@@ -109,12 +109,12 @@ Use bullet points (- ) within sections. Be specific to ${widget.location['name']
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Column(children: [
                 // Header banner
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(18),
+                  padding: EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     gradient: AppColors.heroGradient,
                     borderRadius: BorderRadius.circular(18),
@@ -127,12 +127,12 @@ Use bullet points (- ) within sections. Be specific to ${widget.location['name']
                   ),
                   child: Row(children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.auto_awesome,
+                      child: Icon(Icons.auto_awesome,
                           color: AppColors.accentLight, size: 24),
                     ),
                     const SizedBox(width: 14),

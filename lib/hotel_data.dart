@@ -10,6 +10,8 @@ final List<Hotel> kHotels = [
     price: 250.0,
     description: 'An architectural masterpiece by Geoffrey Bawa, Heritance Kandalama is built into a rock face and offers stunning views of the Sigiriya rock and Kandalama tank.',
     amenities: ['Infinity Pool', 'Eco Park', 'Spa', 'Fine Dining', 'Gym'],
+    lat: 7.8893,
+    lng: 80.7258,
   ),
   Hotel(
     id: 'h2',
@@ -20,6 +22,8 @@ final List<Hotel> kHotels = [
     price: 180.0,
     description: 'A scenic tea estate resort offering luxury chalets with breathtaking views of the Ella Gap and Little Adam\'s Peak.',
     amenities: ['Tea Plantation', 'Spa', 'Pool', 'Restaurant', 'Hiking'],
+    lat: 6.8687,
+    lng: 81.0551,
   ),
   Hotel(
     id: 'h3',
@@ -30,6 +34,8 @@ final List<Hotel> kHotels = [
     price: 210.0,
     description: 'A heritage resort designed by Geoffrey Bawa, offering a blend of colonial charm and modern luxury on the banks of the Bentota River.',
     amenities: ['Beach Access', 'Water Sports', 'Kids Club', 'Multiple Pools', 'Art Gallery'],
+    lat: 6.4267,
+    lng: 79.9961,
   ),
   Hotel(
     id: 'h4',
@@ -40,5 +46,7 @@ final List<Hotel> kHotels = [
     price: 195.0,
     description: 'Perched on a rocky promontory overlooking the Indian Ocean, this iconic hotel offers a majestic stay near the historic Galle Fort.',
     amenities: ['Ocean View', 'Galle Fort proximity', 'Pool', 'Tennis Court', 'Ayurvedic Spa'],
+    lat: 6.0425,
+    lng: 80.2078,
   ),
 ];

@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'favorites_provider.dart';
+import 'data_provider.dart';
 import 'hotel_model.dart';
-import 'hotel_data.dart';
 import 'hotel_detail_screen.dart';
 import 'app_theme.dart';
+import 'universal_image.dart';
 
 class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({super.key});
+  FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final dataProvider = Provider.of<DataProvider>(context);
+    final hotelsList = dataProvider.hotels;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Favorites'),
+        title: Text('My Favorites'),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -47,7 +51,7 @@ class FavoritesScreen extends StatelessWidget {
             );
           }
 
-          final favoriteHotels = kHotels
+          final favoriteHotels = hotelsList
               .where((hotel) => favoriteIds.contains(hotel.id))
               .toList();
 
@@ -93,8 +97,8 @@ class _FavoriteHotelCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-              child: Image.network(
-                hotel.image,
+              child: UniversalImage(
+                imagePath: hotel.image,
                 width: 120,
                 height: 120,
                 fit: BoxFit.cover,
@@ -108,7 +112,7 @@ class _FavoriteHotelCard extends StatelessWidget {
                   children: [
                     Text(
                       hotel.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
@@ -116,10 +120,10 @@ class _FavoriteHotelCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       hotel.location,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
                       ),
@@ -130,7 +134,7 @@ class _FavoriteHotelCard extends StatelessWidget {
                       children: [
                         Text(
                           '\$${hotel.price.toInt()}/night',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary,
                           ),
@@ -139,7 +143,7 @@ class _FavoriteHotelCard extends StatelessWidget {
                           builder: (context, provider, child) {
                             final isFav = provider.isFavorite(hotel.id);
                             return GestureDetector(
-                              onTap: () => provider.toggleFavorite(hotel.id),
+                              onTap: () => provider.toggleFavorite(hotel.id, hotel.name),
                               child: Icon(
                                 isFav ? Icons.favorite : Icons.favorite_border,
                                 color: isFav ? Colors.red : Colors.grey,

@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home_screen.dart';
 import 'app_theme.dart';
+
+import 'universal_image.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,6 +34,16 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscurePassword = true;
   bool _isLoginMode = true;
 
+  // Background images for the slideshow - real verified photos
+  final List<String> _bgImages = [
+    'https://images.pexels.com/photos/13391116/pexels-photo-13391116.jpeg?auto=compress&cs=tinysrgb&w=800', // Sigiriya Rock
+    'https://images.unsplash.com/photo-1765833437191-9dc9992db439?w=800&q=80', // Galle Fort Lighthouse
+    'https://images.unsplash.com/photo-1665849050332-8d5d7e59afb6?w=800&q=80', // Kandy Temple of the Tooth
+    'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?w=800&q=80', // Coconut Tree Hill, Mirissa
+  ];
+  int _currentBgIndex = 0;
+  Timer? _bgTimer;
+
   @override
   void initState() {
     super.initState();
@@ -40,10 +53,20 @@ class _LoginScreenState extends State<LoginScreen>
     _slideAnim = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(
         CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
     _animController.forward();
+
+    // Start background image slideshow
+    _bgTimer = Timer.periodic(const Duration(seconds: 6), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentBgIndex = (_currentBgIndex + 1) % _bgImages.length;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _bgTimer?.cancel();
     _animController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
@@ -185,11 +208,11 @@ class _LoginScreenState extends State<LoginScreen>
   void _showSnack(String message, {required bool isError}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
+        content: Text(message, style: TextStyle(fontWeight: FontWeight.w500)),
         backgroundColor: isError ? AppColors.error : AppColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
+        margin: EdgeInsets.all(16),
       ),
     );
   }
@@ -198,11 +221,11 @@ class _LoginScreenState extends State<LoginScreen>
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [Icon(Icons.error_outline, color: AppColors.error), SizedBox(width: 8), Text('Verification Required')],
         ),
         content: Text(message),
-        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK'))],
+        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('OK'))],
       ),
     );
   }
@@ -212,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen>
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [Icon(Icons.check_circle_outline, color: AppColors.success), SizedBox(width: 8), Text('Verify Email')],
         ),
         content: Text(message),
@@ -224,187 +247,282 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: SlideTransition(
-            position: _slideAnim,
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    // ── Logo ──
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [
-                        BoxShadow(color: AppColors.primary.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 8))
-                      ]),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          width: 88,
-                          height: 88,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Container(
-                            width: 88, height: 88, color: AppColors.primarySurface,
-                            child: const Icon(Icons.travel_explore, size: 50, color: AppColors.primary),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Background Image Slideshow ──
+          AnimatedSwitcher(
+            duration: Duration(seconds: 1),
+            child: UniversalImage(
+              imagePath: _bgImages[_currentBgIndex],
+              key: ValueKey<int>(_currentBgIndex),
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              errorWidget: Container(color: AppColors.primaryDark),
+            ),
+          ),
+          // ── Dark Gradient Overlay ──
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.35),
+                  Colors.black.withValues(alpha: 0.8),
+                ],
+              ),
+            ),
+          ),
+          // ── Foreground Content ──
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        // ── Logo ──
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              )
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              width: 88,
+                              height: 88,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                width: 88,
+                                height: 88,
+                                color: AppColors.primarySurface,
+                                child: Icon(Icons.travel_explore, size: 50, color: AppColors.primary),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'ARAKSHAKAYA',
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.primaryDark, letterSpacing: 1.2),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.primarySurface,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        '🌴 Travel AI Guide',
-                        style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 36),
-
-                      // ── Form Card ──
-                      Container(
-                        padding: const EdgeInsets.all(28),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 40, offset: const Offset(0, 16)),
-                          ],
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _isLoginMode ? 'Welcome Back 👋' : 'Create Account',
-                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.textPrimary, letterSpacing: -0.5),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _isLoginMode ? 'Sign in to continue your journey' : 'Join and start exploring Sri Lanka',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                              ),
-                              const SizedBox(height: 32),
-
-                              // ── Tab Toggle ──
-                              Container(
-                                decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(12)),
-                                child: Row(
-                                  children: [
-                                    _tabBtn('Log In', _isLoginMode, () => setState(() => _isLoginMode = true)),
-                                    _tabBtn('Sign Up', !_isLoginMode, () => setState(() => _isLoginMode = false)),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // ── 1. Full Name Field (Sign Up Only) ──
-                              if (!_isLoginMode) ...[
-                                TextFormField(
-                                  controller: _nameController,
-                                  keyboardType: TextInputType.name,
-                                  decoration: _inputStyle('Full Name', Icons.person_outline),
-                                  validator: (val) => (!_isLoginMode && (val == null || val.trim().isEmpty)) ? 'Please enter your name' : null,
-                                ),
-                                const SizedBox(height: 16),
-
-                                // ── 2. Phone Number Field (Sign Up Only) ──
-                                TextFormField(
-                                  controller: _phoneController,
-                                  keyboardType: TextInputType.phone,
-                                  decoration: _inputStyle('Phone Number', Icons.phone_outlined),
-                                  validator: (val) {
-                                    if (!_isLoginMode) {
-                                      if (val == null || val.trim().isEmpty) return 'Please enter phone number';
-                                      if (val.trim().length < 10) return 'Enter a valid phone number (e.g. 0771234567)';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-
-                              // ── 3. Email Field ──
-                              TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                decoration: _inputStyle('Email Address', Icons.email_outlined),
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) return 'Please enter your email';
-                                  if (!val.contains('@')) return 'Enter a valid email';
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
-                              // ── 4. Password Field ──
-                              TextFormField(
-                                controller: _passwordController,
-                                obscureText: _obscurePassword,
-                                decoration: InputDecoration(
-                                  labelText: 'Password',
-                                  prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
-                                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                                  ),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey[300]!)),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey[300]!)),
-                                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                                ),
-                                validator: (val) => (val == null || val.length < 6) ? 'Password must be at least 6 characters' : null,
-                              ),
-                              const SizedBox(height: 28),
-
-                              // ── Submit Button ──
-                              if (isLoading)
-                                const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                              else
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: _isLoginMode ? _login : _signUp,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                      elevation: 3,
-                                      shadowColor: AppColors.primary.withValues(alpha: 0.4),
-                                    ),
-                                    child: Text(_isLoginMode ? 'Log In' : 'Create Account', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                  ),
-                                ),
+                        const SizedBox(height: 18),
+                        const Text(
+                          'ARAKSHAKAYA',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
+                            shadows: [
+                              Shadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 2)),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'By continuing, you agree to our Terms of Service.',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                          ),
+                          child: const Text(
+                            '🌴 Travel AI Guide',
+                            style: TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(height: 36),
+
+                        // ── Form Card ──
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              padding: const EdgeInsets.all(28),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.88),
+                                borderRadius: BorderRadius.circular(28),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.15),
+                                    blurRadius: 40,
+                                    offset: const Offset(0, 16),
+                                  ),
+                                ],
+                              ),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _isLoginMode ? 'Welcome Back 👋' : 'Create Account',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.textPrimary,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _isLoginMode
+                                          ? 'Sign in to continue your journey'
+                                          : 'Join and start exploring Sri Lanka',
+                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 32),
+
+                                    // ── Tab Toggle ──
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          _tabBtn('Log In', _isLoginMode, () => setState(() => _isLoginMode = true)),
+                                          _tabBtn('Sign Up', !_isLoginMode, () => setState(() => _isLoginMode = false)),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // ── 1. Full Name Field (Sign Up Only) ──
+                                    if (!_isLoginMode) ...[
+                                      TextFormField(
+                                        controller: _nameController,
+                                        keyboardType: TextInputType.name,
+                                        decoration: _inputStyle('Full Name', Icons.person_outline),
+                                        validator: (val) =>
+                                            (!_isLoginMode && (val == null || val.trim().isEmpty))
+                                                ? 'Please enter your name'
+                                                : null,
+                                      ),
+                                      const SizedBox(height: 16),
+
+                                      // ── 2. Phone Number Field (Sign Up Only) ──
+                                      TextFormField(
+                                        controller: _phoneController,
+                                        keyboardType: TextInputType.phone,
+                                        decoration: _inputStyle('Phone Number', Icons.phone_outlined),
+                                        validator: (val) {
+                                          if (!_isLoginMode) {
+                                            if (val == null || val.trim().isEmpty) return 'Please enter phone number';
+                                            if (val.trim().length < 10) {
+                                              return 'Enter a valid phone number (e.g. 0771234567)';
+                                            }
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
+
+                                    // ── 3. Email Field ──
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      decoration: _inputStyle('Email Address', Icons.email_outlined),
+                                      validator: (val) {
+                                        if (val == null || val.isEmpty) return 'Please enter your email';
+                                        if (!val.contains('@')) return 'Enter a valid email';
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // ── 4. Password Field ──
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      decoration: InputDecoration(
+                                        labelText: 'Password',
+                                        prefixIcon: Icon(Icons.lock_outline, color: AppColors.primary),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                            color: Colors.grey,
+                                          ),
+                                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(14),
+                                          borderSide: BorderSide(color: Colors.grey[300]!),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(14),
+                                          borderSide: BorderSide(color: Colors.grey[300]!),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(14),
+                                          borderSide: BorderSide(color: AppColors.primary, width: 2),
+                                        ),
+                                      ),
+                                      validator: (val) =>
+                                          (val == null || val.length < 6) ? 'Password must be at least 6 characters' : null,
+                                    ),
+                                    SizedBox(height: 28),
+
+                                    // ── Submit Button ──
+                                    if (isLoading)
+                                      Center(child: CircularProgressIndicator(color: AppColors.primary))
+                                    else
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: _isLoginMode ? _login : _signUp,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.primary,
+                                            foregroundColor: Colors.white,
+                                            padding: EdgeInsets.symmetric(vertical: 16),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                            elevation: 3,
+                                            shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                                          ),
+                                          child: Text(
+                                            _isLoginMode ? 'Log In' : 'Create Account',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'By continuing, you agree to our Terms of Service.',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
+      ),
     );
   }
 
@@ -414,7 +532,7 @@ class _LoginScreenState extends State<LoginScreen>
       prefixIcon: Icon(icon, color: AppColors.primary),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey[300]!)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey[300]!)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppColors.primary, width: 2)),
     );
   }
 
@@ -423,8 +541,8 @@ class _LoginScreenState extends State<LoginScreen>
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 11),
+          duration: Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
             color: active ? AppColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(10),

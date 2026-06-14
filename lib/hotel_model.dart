@@ -7,6 +7,8 @@ class Hotel {
   final double price;
   final String description;
   final List<String> amenities;
+  final double lat;
+  final double lng;
 
   Hotel({
     required this.id,
@@ -17,5 +19,7 @@ class Hotel {
     required this.price,
     required this.description,
     required this.amenities,
+    required this.lat,
+    required this.lng,
   });
 }

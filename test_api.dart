@@ -2,12 +2,12 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:io';
 
 void main() async {
-  const apiKey = 'AIzaSyBK0DGHdeV2x9b0Xag8_TgGK8_EubFYys0';
+  const apiKey = 'YOUR_GEMINI_API_KEY_HERE';
   print('Testing Gemini API...');
   
   try {
     final model = GenerativeModel(
-      model: 'gemini-pro',
+      model: 'gemini-2.0-flash',
       apiKey: apiKey,
     );
     

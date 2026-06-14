@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Allow camera access to attach travel photo notes.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow photo library access to select travel photos.</string>
 </dict>
 </plist>

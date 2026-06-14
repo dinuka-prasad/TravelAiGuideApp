@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'favorites_provider.dart';
+import 'data_provider.dart';
 import 'splash_screen.dart';
 import 'home_screen.dart';
 import 'app_theme.dart';
@@ -17,6 +18,8 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => DataProvider()),
       ],
       child: const MyApp(),
     ),
@@ -28,11 +31,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'ARAKSHAKAYA Travel AI Guide',
-      theme: buildAppTheme(),
-      home: const AuthGate(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'ARAKSHAKAYA Travel AI Guide',
+          theme: buildAppTheme(),
+          darkTheme: buildAppDarkTheme(),
+          themeMode: themeProvider.themeMode,
+          home: const AuthGate(),
+        );
+      },
     );
   }
 }

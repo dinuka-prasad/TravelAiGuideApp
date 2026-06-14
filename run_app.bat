@@ -1,0 +1,3 @@
+@echo off
+echo Starting App with Web Security Disabled (To allow Firebase Storage Uploads)...
+flutter run -d chrome --web-browser-flag "--disable-web-security"

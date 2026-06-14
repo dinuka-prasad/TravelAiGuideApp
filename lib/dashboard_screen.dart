@@ -2,23 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'data_provider.dart';
 import 'app_theme.dart';
-import 'destinations.dart';
+import 'universal_image.dart';
 import 'chat_screen.dart';
 import 'planner_screen.dart';
 import 'hotel_booking_screen.dart';
-import 'hotel_data.dart';
 import 'hotel_detail_screen.dart';
 import 'hotel_model.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final displayName = user?.email?.split('@').first ?? 'Traveller';
     final uid = user?.uid ?? '';
+    final dataProvider = Provider.of<DataProvider>(context);
+
+    if (dataProvider.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final destinations = dataProvider.destinations;
+    final hotels = dataProvider.hotels;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -32,7 +43,7 @@ class DashboardScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration:
-                    const BoxDecoration(gradient: AppColors.heroGradient),
+                    BoxDecoration(gradient: AppColors.heroGradient),
                 child: Stack(
                   children: [
                     // Decorative circles
@@ -80,7 +91,7 @@ class DashboardScreen extends StatelessWidget {
                                     child: Image.asset(
                                       'assets/images/logo.png',
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => const Icon(
+                                      errorBuilder: (_, _, _) => Icon(
                                         Icons.travel_explore,
                                         color: AppColors.primary,
                                       ),
@@ -100,7 +111,7 @@ class DashboardScreen extends StatelessWidget {
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.location_on,
+                                      Icon(Icons.location_on,
                                           color: AppColors.accentLight,
                                           size: 14),
                                       const SizedBox(width: 4),
@@ -149,17 +160,17 @@ class DashboardScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ── Stats Row ──
-                _buildStatsRow(uid, context),
-                const SizedBox(height: 20),
+                _buildStatsRow(uid, context, destinations.length),
+                SizedBox(height: 20),
 
                 // ── Quick Actions ──
-                const Text('Quick Actions',
+                Text('Quick Actions',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary)),
                 const SizedBox(height: 12),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -175,7 +186,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: _ActionCard(
                         icon: Icons.hotel_outlined,
@@ -203,7 +214,7 @@ class DashboardScreen extends StatelessWidget {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const PlannerScreen()),
+                              builder: (_) => PlannerScreen()),
                         ),
                       ),
                     ),
@@ -217,7 +228,7 @@ class DashboardScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Saved Wishlist',
+                    Text('Saved Wishlist',
                         style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -226,9 +237,9 @@ class DashboardScreen extends StatelessWidget {
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const PlannerScreen()),
+                            builder: (_) => PlannerScreen()),
                       ),
-                      child: const Text('View All',
+                      child: Text('View All',
                           style: TextStyle(color: AppColors.primary)),
                     ),
                   ],
@@ -236,11 +247,11 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 uid.isNotEmpty
                     ? _buildWishlistPreview(uid)
-                    : const _EmptyWishlistCard(),
-                const SizedBox(height: 20),
+                    : _EmptyWishlistCard(),
+                SizedBox(height: 20),
 
                 // ── Recent Itineraries ──
-                const Text('Recent Itineraries',
+                Text('Recent Itineraries',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -255,7 +266,7 @@ class DashboardScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Recommended Stays',
+                    Text('Recommended Stays',
                         style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -264,9 +275,9 @@ class DashboardScreen extends StatelessWidget {
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const HotelBookingScreen()),
+                            builder: (_) => HotelBookingScreen()),
                       ),
-                      child: const Text('View All',
+                      child: Text('View All',
                           style: TextStyle(color: AppColors.primary)),
                     ),
                   ],
@@ -276,15 +287,15 @@ class DashboardScreen extends StatelessWidget {
                   height: 200,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: kHotels.length,
+                    itemCount: hotels.length,
                     separatorBuilder: (_, _) => const SizedBox(width: 16),
-                    itemBuilder: (ctx, i) => _HotelPickCard(hotel: kHotels[i]),
+                    itemBuilder: (ctx, i) => _HotelPickCard(hotel: hotels[i]),
                   ),
                 ),
 
                 // ── Destination Highlights ──
-                const SizedBox(height: 20),
-                const Text('Top Picks',
+                SizedBox(height: 20),
+                Text('Top Picks',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -294,10 +305,10 @@ class DashboardScreen extends StatelessWidget {
                   height: 130,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: kDestinations.take(5).length,
+                    itemCount: destinations.take(5).length,
                     separatorBuilder: (_, _) => const SizedBox(width: 12),
                     itemBuilder: (ctx, i) =>
-                        _DestPickCard(d: kDestinations[i]),
+                        _DestPickCard(d: destinations[i]),
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -316,7 +327,7 @@ class DashboardScreen extends StatelessWidget {
     return 'Evening';
   }
 
-  Widget _buildStatsRow(String uid, BuildContext context) {
+  Widget _buildStatsRow(String uid, BuildContext context, int destCount) {
     return StreamBuilder<QuerySnapshot>(
       stream: uid.isNotEmpty
           ? FirebaseFirestore.instance
@@ -348,7 +359,7 @@ class DashboardScreen extends StatelessWidget {
                     color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
                     icon: Icons.map,
@@ -361,7 +372,7 @@ class DashboardScreen extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     icon: Icons.explore,
-                    value: '${kDestinations.length}',
+                    value: '$destCount',
                     label: 'Destinations',
                     color: Color(0xFF00897B),
                   ),
@@ -384,7 +395,7 @@ class DashboardScreen extends StatelessWidget {
           .snapshots(),
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
               child: CircularProgressIndicator(color: AppColors.primary));
         }
         final docs = snap.data?.docs ?? [];
@@ -410,7 +421,7 @@ class DashboardScreen extends StatelessWidget {
           .snapshots(),
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
               child: CircularProgressIndicator(color: AppColors.primary));
         }
         final docs = snap.data?.docs ?? [];
@@ -470,15 +481,15 @@ class _StatCard extends StatelessWidget {
             ),
             child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(value,
               style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: color)),
-          const SizedBox(height: 2),
+          SizedBox(height: 2),
           Text(label,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11, color: AppColors.textSecondary),
               textAlign: TextAlign.center),
         ],
@@ -574,34 +585,34 @@ class _WishlistPreviewRow extends StatelessWidget {
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
-              offset: const Offset(0, 3))
+              offset: Offset(0, 3))
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.bookmark, color: AppColors.primary, size: 18),
+            child: Icon(Icons.bookmark, color: AppColors.primary, size: 18),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Text(name,
-                style: const TextStyle(
+                style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary)),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(tag,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11,
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600)),
@@ -640,32 +651,32 @@ class _ItineraryPreviewRow extends StatelessWidget {
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
-              offset: const Offset(0, 3))
+              offset: Offset(0, 3))
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.accentDark.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.map, color: AppColors.accentDark, size: 18),
+            child: Icon(Icons.map, color: AppColors.accentDark, size: 18),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(location,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                         fontSize: 14)),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text('$days days · $budget · $style',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 11, color: AppColors.textSecondary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
@@ -675,7 +686,7 @@ class _ItineraryPreviewRow extends StatelessWidget {
           if (createdAt != null)
             Text(
               DateFormat('MMM d').format(createdAt!),
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11, color: AppColors.textHint),
             ),
         ],
@@ -690,13 +701,13 @@ class _EmptyWishlistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey[200]!),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.bookmark_border, color: AppColors.textHint, size: 28),
           SizedBox(width: 12),
@@ -714,13 +725,13 @@ class _EmptyItineraryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey[200]!),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.map_outlined, color: AppColors.textHint, size: 28),
           SizedBox(width: 12),
@@ -756,11 +767,10 @@ class _DestPickCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                d['img'],
+              UniversalImage(
+                imagePath: d['img'],
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) =>
-                    Container(color: AppColors.primarySurface),
+                errorWidget: Container(color: AppColors.primarySurface),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -826,8 +836,8 @@ class _HotelPickCard extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.network(
-                  hotel.image,
+                child: UniversalImage(
+                  imagePath: hotel.image,
                   width: 160,
                   fit: BoxFit.cover,
                 ),
@@ -851,12 +861,12 @@ class _HotelPickCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         hotel.rating.toString(),
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       ),
-                      const Spacer(),
+                      Spacer(),
                       Text(
                         '\$${hotel.price.toInt()}',
-                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ],
                   ),

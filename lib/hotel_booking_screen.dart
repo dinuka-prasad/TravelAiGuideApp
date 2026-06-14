@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'favorites_provider.dart';
+import 'data_provider.dart';
 import 'hotel_model.dart';
-import 'hotel_data.dart';
 import 'hotel_detail_screen.dart';
 import 'app_theme.dart';
 import 'map_screen.dart';
+import 'universal_image.dart';
 
 class HotelBookingScreen extends StatefulWidget {
   const HotelBookingScreen({super.key});
@@ -34,7 +35,7 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Filters', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Text('Max Price: \$${_maxPrice.toInt()}'),
                   Slider(
                     value: _maxPrice,
@@ -46,7 +47,7 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
                       setState(() => _maxPrice = val);
                     },
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Text('Minimum Rating: ${_minRating.toStringAsFixed(1)} stars'),
                   Slider(
                     value: _minRating,
@@ -59,7 +60,7 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
                       setState(() => _minRating = val);
                     },
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -79,7 +80,10 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredHotels = kHotels.where((hotel) {
+    final dataProvider = Provider.of<DataProvider>(context);
+    final hotelsList = dataProvider.hotels;
+
+    final filteredHotels = hotelsList.where((hotel) {
       return hotel.price <= _maxPrice && hotel.rating >= _minRating;
     }).toList();
 
@@ -94,9 +98,9 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MapScreen())),
-        label: const Text('Map View', style: TextStyle(color: Colors.white)),
-        icon: const Icon(Icons.map, color: Colors.white),
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MapScreen())),
+        label: Text('Map View', style: TextStyle(color: Colors.white)),
+        icon: Icon(Icons.map, color: Colors.white),
         backgroundColor: AppColors.accent,
       ),
       body: filteredHotels.isEmpty
@@ -144,8 +148,8 @@ class _HotelCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                  child: Image.network(
-                    hotel.image,
+                  child: UniversalImage(
+                    imagePath: hotel.image,
                     height: 220,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -158,7 +162,7 @@ class _HotelCard extends StatelessWidget {
                     builder: (context, provider, child) {
                       final isFav = provider.isFavorite(hotel.id);
                       return GestureDetector(
-                        onTap: () => provider.toggleFavorite(hotel.id),
+                        onTap: () => provider.toggleFavorite(hotel.id, hotel.name),
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: const BoxDecoration(
@@ -209,7 +213,7 @@ class _HotelCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           hotel.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
@@ -218,7 +222,7 @@ class _HotelCard extends StatelessWidget {
                       ),
                       Text(
                         '\$${hotel.price.toInt()}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
                           color: AppColors.primary,
@@ -226,17 +230,17 @@ class _HotelCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
-                      const SizedBox(width: 4),
+                      Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                      SizedBox(width: 4),
                       Text(
                         hotel.location,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                       ),
-                      const Spacer(),
-                      const Text(
+                      Spacer(),
+                      Text(
                         '/night',
                         style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                       ),

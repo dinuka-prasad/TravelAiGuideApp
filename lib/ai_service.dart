@@ -11,7 +11,8 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 ///  4. Paste your new key below, replacing the placeholder.
 /// ─────────────────────────────────────────────────────────────────────────────
 const String _geminiApiKey =
-    'AIzaSyBK0DGHdeV2x9b0Xag8_TgGK8_EubFYys0'; // 👈 ඔයාගේ අලුත්ම API Key එක මෙතනට දාන්න මචං
+    'YOUR_GEMINI_API_KEY_HERE'; 
+
 
 // ─── DO NOT EDIT BELOW THIS LINE ─────────────────────────────────────────────
 
@@ -38,53 +39,76 @@ Future<String> callAiApi({
     );
   }
 
-  try {
-    final model = GenerativeModel(
-      model: 'gemini-2.0-flash',
-      apiKey: _geminiApiKey,
-      generationConfig: GenerationConfig(
-        maxOutputTokens: maxTokens,
-        temperature: 0.7,
-      ),
-      requestOptions: const RequestOptions(apiVersion: 'v1beta'),
-      systemInstruction: Content.system(systemPrompt),
-    );
+  final List<String> modelsToTry = [
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-2.0-flash-lite',
+    'gemini-3.5-flash',
+  ];
 
-    final content = [Content.text(userMessage)];
-    final response = await model.generateContent(content);
-    final text = response.text;
+  dynamic lastException;
 
-    if (text == null || text.trim().isEmpty) {
-      throw Exception('Gemini returned an empty response. Try again.');
+  for (final modelName in modelsToTry) {
+    try {
+      debugPrint('Attempting Gemini API call with model: $modelName');
+      final model = GenerativeModel(
+        model: modelName,
+        apiKey: _geminiApiKey,
+        generationConfig: GenerationConfig(
+          maxOutputTokens: maxTokens,
+          temperature: 0.7,
+        ),
+        requestOptions: const RequestOptions(apiVersion: 'v1beta'),
+        systemInstruction: Content.system(systemPrompt),
+      );
+
+      final content = [Content.text(userMessage)];
+      final response = await model.generateContent(content).timeout(const Duration(seconds: 15));
+      final text = response.text;
+
+      if (text != null && text.trim().isNotEmpty) {
+        return text;
+      }
+    } catch (e) {
+      debugPrint('Error with model $modelName: $e');
+      lastException = e;
+      
+      // If it's an invalid API key, no point trying other models
+      if (e is GenerativeAIException) {
+        final msg = e.message.toLowerCase();
+        if (msg.contains('api_key_invalid') || msg.contains('api key not valid')) {
+          throw Exception(
+            '❌ Invalid API key.\n\n'
+            'Your key in ai_service.dart is not recognised by Google.\n'
+            'Please generate a fresh key at:\n'
+            'https://aistudio.google.com/app/apikey',
+          );
+        }
+      }
     }
-    return text;
-  } on GenerativeAIException catch (e) {
-    // Provide friendly messages for common API errors
-    final msg = e.message.toLowerCase();
-    if (msg.contains('api_key_invalid') || msg.contains('api key not valid')) {
-      throw Exception(
-        '❌ Invalid API key.\n\n'
-        'Your key in ai_service.dart is not recognised by Google.\n'
-        'Please generate a fresh key at:\n'
-        'https://aistudio.google.com/app/apikey',
-      );
-    } else if (msg.contains('quota') || msg.contains('resource_exhausted')) {
-      throw Exception(
-        '⏳ API quota exceeded.\n\n'
-        'You have hit the free-tier limit. '
-        'Please wait a minute and try again.',
-      );
-    } else if (msg.contains('permission_denied')) {
-      throw Exception(
-        '🚫 Permission denied.\n\n'
-        'Make sure the Generative Language API is enabled in your '
-        'Google Cloud project:\n'
-        'https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com',
-      );
-    }
-    rethrow;
-  } catch (e) {
-    debugPrint('General API error: $e');
-    throw Exception('Failed to connect to AI: $e');
   }
+
+  if (lastException != null) {
+    if (lastException is GenerativeAIException) {
+      final msg = lastException.message.toLowerCase();
+      if (msg.contains('quota') || msg.contains('resource_exhausted')) {
+        throw Exception(
+          '⏳ API quota exceeded.\n\n'
+          'You have hit the free-tier limit. '
+          'Please wait a minute and try again.',
+        );
+      } else if (msg.contains('permission_denied')) {
+        throw Exception(
+          '🚫 Permission denied.\n\n'
+          'Make sure the Generative Language API is enabled in your '
+          'Google Cloud project:\n'
+          'https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com',
+        );
+      }
+      throw Exception('Gemini Server Error: ${lastException.message}');
+    }
+    throw Exception('Failed to connect to AI: $lastException');
+  }
+
+  throw Exception('Failed to get response from Gemini.');
 }

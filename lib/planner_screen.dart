@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'detail_screen.dart';
 import 'app_theme.dart';
+import 'ai_service.dart';
+import 'universal_image.dart';
 
 // ─────────────────────────────────────────────
 // Wishlist Manager – Firestore-backed singleton
@@ -45,10 +47,25 @@ class WishlistManager {
     }
   }
 
+  static Future<void> update(String name, Map<String, dynamic> data) async {
+    if (_uid.isEmpty) return;
+    final snap = await _col.where('name', isEqualTo: name).get();
+    for (final doc in snap.docs) {
+      await doc.reference.update(data);
+    }
+  }
+
   static Future<bool> isSaved(String name) async {
     if (_uid.isEmpty) return false;
     final snap = await _col.where('name', isEqualTo: name).get();
     return snap.docs.isNotEmpty;
+  }
+
+  static Future<Map<String, dynamic>?> getData(String name) async {
+    if (_uid.isEmpty) return null;
+    final snap = await _col.where('name', isEqualTo: name).get();
+    if (snap.docs.isEmpty) return null;
+    return snap.docs.first.data() as Map<String, dynamic>;
   }
 }
 
@@ -56,7 +73,7 @@ class WishlistManager {
 // Planner Screen
 // ─────────────────────────────────────────────
 class PlannerScreen extends StatelessWidget {
-  const PlannerScreen({super.key});
+  PlannerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +106,7 @@ class PlannerScreen extends StatelessWidget {
               stream: WishlistManager.stream,
               builder: (ctx, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(
+                  return Center(
                       child: CircularProgressIndicator(
                           color: AppColors.primary));
                 }
@@ -98,8 +115,10 @@ class PlannerScreen extends StatelessWidget {
                     ? _buildEmpty(context)
                     : Column(
                         children: [
-                          // Travel alert
-                          _buildAlert(),
+                          // Dynamic AI Travel alert
+                          DynamicAlertBanner(
+                            destinations: items.map((e) => e['name'] as String).toList(),
+                          ),
                           // Count header
                           Padding(
                             padding: const EdgeInsets.symmetric(
@@ -108,7 +127,7 @@ class PlannerScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   'Saved Destinations (${items.length})',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,
                                       color: AppColors.textPrimary),
@@ -133,50 +152,7 @@ class PlannerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAlert() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF8E1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFE082)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFECB3),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.notifications_active,
-                color: Color(0xFFF57F17), size: 22),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Travel Alert',
-                    style: TextStyle(
-                        color: Color(0xFFF57F17),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13)),
-                Text(
-                  'Best time to visit: Jan – Apr for most destinations. Book early!',
-                  style: TextStyle(
-                      color: Color(0xFFF9A825),
-                      fontSize: 12,
-                      height: 1.4),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildEmpty(BuildContext context) {
     return Center(
@@ -184,22 +160,22 @@ class PlannerScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(28),
+            padding: EdgeInsets.all(28),
             decoration: BoxDecoration(
               color: AppColors.primarySurface,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.bookmark_border,
+            child: Icon(Icons.bookmark_border,
                 size: 64, color: AppColors.primary),
           ),
-          const SizedBox(height: 20),
-          const Text('No Saved Destinations',
+          SizedBox(height: 20),
+          Text('No Saved Destinations',
               style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary)),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             'Tap the bookmark icon on any\ndestination to add it here.',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -244,7 +220,7 @@ class _ClearAllButton extends StatelessWidget {
                       }
                       if (context.mounted) Navigator.pop(context);
                     },
-                    child: const Text('Clear',
+                    child: Text('Clear',
                         style: TextStyle(color: AppColors.error)),
                   ),
                 ],
@@ -261,7 +237,7 @@ class _ClearAllButton extends StatelessWidget {
 
 class _WishlistCard extends StatelessWidget {
   final Map<String, dynamic> destination;
-  const _WishlistCard({required this.destination});
+  _WishlistCard({required this.destination});
 
   @override
   Widget build(BuildContext context) {
@@ -300,16 +276,16 @@ class _WishlistCard extends StatelessWidget {
                 // Thumbnail
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    destination['img'] ?? '',
+                  child: UniversalImage(
+                    imagePath: destination['img'] ?? '',
                     width: 80,
                     height: 80,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
+                    errorWidget: Container(
                       width: 80,
                       height: 80,
                       color: AppColors.primarySurface,
-                      child: const Icon(Icons.image,
+                      child: Icon(Icons.image,
                           color: AppColors.primary),
                     ),
                   ),
@@ -321,7 +297,7 @@ class _WishlistCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(destination['name'] ?? '',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                               color: AppColors.textPrimary)),
@@ -366,7 +342,7 @@ class _WishlistCard extends StatelessWidget {
                 ),
                 // Remove button
                 IconButton(
-                  icon: const Icon(Icons.bookmark_remove,
+                  icon: Icon(Icons.bookmark_remove,
                       color: AppColors.error, size: 22),
                   onPressed: () =>
                       WishlistManager.remove(destination['name']),
@@ -376,6 +352,156 @@ class _WishlistCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Dynamic AI Travel Alerts Banner
+// ─────────────────────────────────────────────
+class DynamicAlertBanner extends StatefulWidget {
+  final List<String> destinations;
+  const DynamicAlertBanner({super.key, required this.destinations});
+
+  @override
+  State<DynamicAlertBanner> createState() => _DynamicAlertBannerState();
+}
+
+class _DynamicAlertBannerState extends State<DynamicAlertBanner> {
+  String _alertText = 'Best time to visit: Jan – Apr for most destinations. Book early!';
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAlert();
+  }
+
+  @override
+  void didUpdateWidget(covariant DynamicAlertBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final currentList = widget.destinations;
+    final oldList = oldWidget.destinations;
+
+    bool listChanged = currentList.length != oldList.length;
+    if (!listChanged) {
+      for (int i = 0; i < currentList.length; i++) {
+        if (currentList[i] != oldList[i]) {
+          listChanged = true;
+          break;
+        }
+      }
+    }
+
+    if (listChanged) {
+      _fetchAlert();
+    }
+  }
+
+  Future<void> _fetchAlert() async {
+    if (widget.destinations.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _alertText = 'Add destinations to your planner to get dynamic travel alerts & weather advisories!';
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    try {
+      final destsJoined = widget.destinations.join(', ');
+      final result = await callAiApi(
+        systemPrompt: 'You are a real-time travel advisory system for Sri Lanka. '
+            'Generate a very brief, practical travel advisory/alert (max 2 sentences) '
+            'about the weather, seasonal highlights, or safety warnings for the specified destinations. '
+            'Keep it concise, realistic, and direct. Use emojis naturally.',
+        userMessage: 'Generate real-time travel alerts/warnings/weather advisories for these Sri Lankan places: $destsJoined.',
+        maxTokens: 150,
+      );
+
+      if (mounted) {
+        setState(() {
+          _alertText = result.trim();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching dynamic alerts: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFE082)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFECB3),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.notifications_active,
+                color: Color(0xFFF57F17), size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'AI Travel Alert',
+                      style: TextStyle(
+                          color: Color(0xFFF57F17),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13),
+                    ),
+                    if (_isLoading)
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF57F17)),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _alertText,
+                  style: const TextStyle(
+                      color: Color(0xFFF9A825),
+                      fontSize: 12,
+                      height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

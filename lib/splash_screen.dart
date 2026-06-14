@@ -5,6 +5,8 @@ import 'home_screen.dart';
 import 'destinations.dart';
 import 'app_theme.dart';
 
+import 'universal_image.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -45,11 +47,10 @@ class _SplashScreenState extends State<SplashScreen>
         fit: StackFit.expand,
         children: [
           // Hero background image
-          Image.network(
-            featured['img'],
+          UniversalImage(
+            imagePath: featured['img'],
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) =>
-                Container(color: AppColors.primaryDark),
+            errorWidget: Container(color: AppColors.primaryDark),
           ),
           // Gradient overlay — branded purple tint
           Container(
@@ -99,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 child: Image.asset(
                                   'assets/images/logo.png',
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, _, _) => const Icon(
+                                  errorBuilder: (_, _, _) => Icon(
                                     Icons.travel_explore,
                                     color: AppColors.primary,
                                     size: 32,
@@ -109,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
                           const SizedBox(width: 16),
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('ARAKSHAKAYA',
@@ -174,8 +175,8 @@ class _SplashScreenState extends State<SplashScreen>
                             context,
                             MaterialPageRoute(
                               builder: (_) => user != null
-                                  ? const HomeScreen()
-                                  : const LoginScreen(),
+                                  ? HomeScreen()
+                                  : LoginScreen(),
                             ),
                           );
                         },

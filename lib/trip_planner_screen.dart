@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_markdown/flutter_markdown.dart'; // MarkdownBody පාවිච්චි කිරීමට එකතු කරන ලදී
 import 'ai_service.dart';
 import 'app_theme.dart';
+import 'database_service.dart';
 
 class AiTripPlannerScreen extends StatefulWidget {
   final Map<String, dynamic> location;
@@ -87,17 +88,24 @@ Tailor everything for a $_budget traveller who loves $_style.''',
         'plan': _plan,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      await DatabaseService.logNotification(
+        uid: uid,
+        title: 'Itinerary Created',
+        message: 'Successfully planned a $_days-day $_style trip to ${widget.location['name']}.',
+        type: 'itinerary',
+      );
       if (mounted) {
         setState(() => _saved = true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Itinerary saved! View it in your Dashboard.'),
+            content: Text('Itinerary saved! View it in your Dashboard.'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            margin: const EdgeInsets.all(16),
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -111,7 +119,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            margin: const EdgeInsets.all(16),
+            margin: EdgeInsets.all(16),
           ),
         );
       }
@@ -125,7 +133,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
       appBar: AppBar(
         title: Text(
           'Plan: ${widget.location['name']}',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -155,7 +163,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Customise Your Trip',
                     style: TextStyle(
                       fontSize: 18,
@@ -174,7 +182,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 6,
                         ),
@@ -217,7 +225,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                     'Budget',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: _budgets.map((b) {
@@ -249,7 +257,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                     children: _styles.map((s) {
                       final sel = _style == s;
                       return ChoiceChip(
-                        label: Text(s, style: const TextStyle(fontSize: 12)),
+                        label: Text(s, style: TextStyle(fontSize: 12)),
                         selected: sel,
                         selectedColor: AppColors.primary,
                         backgroundColor: AppColors.primarySurface,
@@ -279,7 +287,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                           : const Icon(Icons.auto_awesome),
                       label: Text(
                         _loading ? 'Generating…' : 'Generate My Itinerary',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -287,7 +295,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -322,12 +330,12 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: AppColors.primarySurface,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.map,
                             color: AppColors.primary,
                           ),
@@ -336,7 +344,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                         Expanded(
                           child: Text(
                             'Your $_days-Day Itinerary',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
@@ -345,7 +353,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                         ),
                         if (!_saved)
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.save_alt,
                               color: AppColors.primary,
                             ),
@@ -353,7 +361,7 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                             tooltip: 'Save to Dashboard',
                           ),
                         if (_saved)
-                          const Icon(
+                          Icon(
                             Icons.check_circle,
                             color: AppColors.success,
                           ),
@@ -373,16 +381,16 @@ Tailor everything for a $_budget traveller who loves $_style.''',
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           onPressed: _saveToFirestore,
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.save_alt,
                             color: AppColors.primary,
                           ),
-                          label: const Text(
+                          label: Text(
                             'Save to Dashboard',
                             style: TextStyle(color: AppColors.primary),
                           ),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.primary),
+                            side: BorderSide(color: AppColors.primary),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),

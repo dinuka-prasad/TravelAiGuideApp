@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'database_service.dart';
 
 class FavoritesProvider extends ChangeNotifier {
   Set<String> _favoriteHotelIds = {};
@@ -55,11 +56,12 @@ class FavoritesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleFavorite(String hotelId) async {
+  Future<void> toggleFavorite(String hotelId, [String? hotelName]) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (_favoriteHotelIds.contains(hotelId)) {
+    final isFav = _favoriteHotelIds.contains(hotelId);
+    if (isFav) {
       _favoriteHotelIds.remove(hotelId);
     } else {
       _favoriteHotelIds.add(hotelId);
@@ -75,9 +77,17 @@ class FavoritesProvider extends ChangeNotifier {
           .set({
         'ids': _favoriteHotelIds.toList(),
       }, SetOptions(merge: true));
+
+      final action = !isFav ? "Saved" : "Removed";
+      final details = hotelName ?? "a hotel";
+      await DatabaseService.logNotification(
+        uid: user.uid,
+        title: !isFav ? 'Added to Favorites' : 'Removed from Favorites',
+        message: '$action $details to/from your favorites.',
+        type: 'favorite',
+      );
     } catch (e) {
       debugPrint('Error saving favorite: $e');
-      // Revert if failed (optional, keeping it simple for now)
     }
   }
 }
