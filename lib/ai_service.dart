@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -24,8 +26,21 @@ Future<String> callAiApi({
   required String userMessage,
   int maxTokens = 2000,
 }) async {
+  // Try to load key dynamically if static key is not set
+  String apiKey = _geminiApiKey;
+  if (apiKey == _keyPlaceholder || apiKey.trim().isEmpty) {
+    try {
+      final configString = await rootBundle.loadString('assets/config.json');
+      final config = jsonDecode(configString) as Map<String, dynamic>;
+      apiKey = config['gemini_api_key'] ?? '';
+    } catch (e) {
+      debugPrint('Could not load API key from assets/config.json: $e');
+    }
+  }
+
   // Guard: key not set
-  if (_geminiApiKey.trim().isEmpty || _geminiApiKey == _keyPlaceholder) {
+  if (apiKey.trim().isEmpty || apiKey == _keyPlaceholder) {
+
     throw Exception(
       '🔑 Gemini API key is missing!\n\n'
       'Steps to fix:\n'
@@ -53,7 +68,7 @@ Future<String> callAiApi({
       debugPrint('Attempting Gemini API call with model: $modelName');
       final model = GenerativeModel(
         model: modelName,
-        apiKey: _geminiApiKey,
+        apiKey: apiKey,
         generationConfig: GenerationConfig(
           maxOutputTokens: maxTokens,
           temperature: 0.7,
