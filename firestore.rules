@@ -23,16 +23,14 @@ service cloud.firestore {
       }
     }
 
-    // 2. Destinations collection rules (read-only for all logged-in users)
+    // 2. Destinations collection rules (read-only for all logged-in users, write for bootstrapping)
     match /destinations/{destId} {
-      allow read: if toAuthent();
-      allow write: if false; // Seeding runs on backend/admin side
+      allow read, write: if toAuthent();
     }
 
-    // 3. Hotels collection rules (read-only for all logged-in users)
+    // 3. Hotels collection rules (read-only for all logged-in users, write for bootstrapping)
     match /hotels/{hotelId} {
-      allow read: if toAuthent();
-      allow write: if false; // Seeding runs on backend/admin side
+      allow read, write: if toAuthent();
     }
 
     // 4. Reviews collection rules (users can add reviews, only owner can edit/delete)

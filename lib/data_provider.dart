@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'database_service.dart';
 import 'hotel_model.dart';
 
@@ -14,9 +15,27 @@ class DataProvider extends ChangeNotifier {
 
   DataProvider() {
     loadData();
+    // Listen to auth changes to reload data on login/logout
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        loadData();
+      } else {
+        _destinations = [];
+        _hotels = [];
+        _isLoading = false;
+        notifyListeners();
+      }
+    });
   }
 
   Future<void> loadData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     notifyListeners();
 
